@@ -6,8 +6,9 @@
 
 - 🔔 将 Home Assistant 通知通过 Webhook HTTP POST 转发到任意服务
 - 🖥️ 纯 UI 配置，无需手动编辑 YAML
+- 🎨 **内置消息模板预设**：企业微信 / 钉钉 / Slack / Discord 一键选择，无需手动拼 JSON
 - 🔑 支持 Bearer Token 认证
-- 📋 支持自定义 HTTP 请求头（JSON 格式）
+- 📋 支持自定义 HTTP 请求头和 Jinja2 消息模板
 - 🔄 支持多个 Webhook 实例（不同服务名称区分）
 - 🎯 运行时动态覆盖 URL、请求头和消息载荷
 
@@ -51,67 +52,69 @@
 3. 填写配置表单：
      | 字段 | 必填 | 说明 |
      |------|------|------|
-     | **Webhook URL** | ✅ | 接收通知的 HTTP 端点，必须以 `http://` 或 `https://` 开头 |
-     | **服务名称** | ❌ | 用于区分多个 webhook 实例，默认为 "webhook" |
-     | **认证令牌** | ❌ | 若填写，自动添加 `Authorization: Bearer <token>` 请求头 |
-     | **自定义请求头** | ❌ | JSON 格式的额外 HTTP 头，如 `{"X-Custom": "value"}` |
+     | **Webhook URL** | ✅ | 目标 HTTP 端点，必须以 `http://` 或 `https://` 开头 |
+     | **服务名称** | ❌ | 支持中文，如"消息推送-企业微信"。用于在自动化中区分各实例 |
+     | **认证令牌** | ❌ | 自动添加 `Authorization: Bearer <token>` 请求头 |
+     | **自定义请求头** | ❌ | JSON 格式额外 HTTP 头，如 `{"X-API-Key": "value"}` |
+     | **消息模板预设** | ❌ | 下拉选择内置格式（企业微信/钉钉/Slack/Discord），选后自动套用 |
+     | **自定义模板** | ❌ | 仅当预设选"自定义"时填写，JSON + Jinja2 格式 |
 4. 点击 **提交**
 
 ## 使用
 
-### 基本用法
+### 日常用法（已选模板预设）
+
+配置时选择了"企业微信 - Markdown"等预设后，只需填 `message` 和 `title`，格式自动转换：
 
 ```yaml
-service: notify.hacs_webhook_notify
-data:
-  message: "这是一条测试消息"
-  title: "通知标题"
-```
-
-### 带附加数据
-
-```yaml
-service: notify.hacs_webhook_notify
+service: notify.消息推送-企业微信    # 你配置的服务名
 data:
   message: "传感器触发告警"
   title: "⚠️ 告警"
-  data:
-    priority: high
-    sensor: motion_sensor_1
-    value: "检测到移动"
 ```
+
+> **变量支持**：`message` 和 `title` 均支持 HA 模板变量：
+> ```yaml
+> message: |
+>   机房: {{ states('sensor.temp_1') }}°C
+>   PVE01: {{ states('sensor.temp_2') }}°C
+>   空调进风: {{ states('sensor.temp_3') }}°C
+> ```
 
 ### 运行时覆盖
 
-可在调用时动态修改 webhook URL、请求头和消息体：
+需要临时换 URL 或自定义消息体时，通过 `data` 覆盖：
 
 ```yaml
-service: notify.hacs_webhook_notify
+service: notify.消息推送-企业微信
 data:
-  message: "发送到另一个 webhook"
+  message: "紧急通知"
   data:
-    url: "https://another-service.com/hook"
-    headers:
-      X-API-Key: "my-api-key"
-    payload:
-      text: "自定义消息格式"
-      channel: "#alerts"
+    url: "https://another-webhook.example.com/hook"    # 临时换 URL
+    headers:                                            # 追加请求头
+      X-Priority: "high"
+    payload:                                            # 完全接管消息体
+      msgtype: text
+      text:
+        content: "自定义格式消息"
 ```
 
 ### 自动化示例
 
 ```yaml
 automation:
-  - alias: "门铃通知"
+  - alias: "温度告警"
     trigger:
-      - platform: state
-        entity_id: binary_sensor.doorbell
-        to: "on"
+      - platform: numeric_state
+        entity_id: sensor.miaomiaoce_t2_7644_temperature
+        above: 35
     action:
-      - service: notify.hacs_webhook_notify
+      - service: notify.消息推送-企业微信
         data:
-          title: "🔔 门铃"
-          message: "有人按门铃！"
+          title: "🌡️ 温度告警"
+          message: |
+            当前温度：{{ states('sensor.miaomiaoce_t2_7644_temperature') }}°C
+            湿度：{{ states('sensor.miaomiaoce_t2_7644_humidity') }}%
 ```
 
 ### 多个 Webhook 实例
@@ -176,106 +179,40 @@ HTTPServer(('0.0.0.0', 8888), H).serve_forever()
 
 ## 常见 Webhook 服务对接
 
-| 服务 | Webhook URL 格式 | 说明 |
+**推荐方式**：添加集成时在"消息模板预设"下拉中选择对应服务即可，无需手写 JSON。
+
+| 服务 | Webhook URL 格式 | 预设选项 |
 | --- | --- | --- |
-| 企业微信机器人 | `https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=xxx` | 消息格式需用运行时覆盖 |
-| 钉钉机器人 | `https://oapi.dingtalk.com/robot/send?access_token=xxx` | 消息格式需用运行时覆盖 |
-| Slack | `https://hooks.slack.com/services/xxx` | 消息格式需用运行时覆盖 |
-| Discord | `https://discord.com/api/webhooks/xxx` | 消息格式需用运行时覆盖 |
-| 自建服务 | `https://your-server.com/hook` | 直接兼容 JSON 格式 |
-| Node-RED | `http://node-red:1880/endpoint` | 直接兼容 JSON 格式 |
+| 企业微信机器人 | `https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=xxx` | 企业微信 - 文本 / Markdown |
+| 钉钉机器人 | `https://oapi.dingtalk.com/robot/send?access_token=xxx` | 钉钉 - 文本 / Markdown |
+| Slack | `https://hooks.slack.com/services/xxx` | Slack |
+| Discord | `https://discord.com/api/webhooks/xxx` | Discord |
+| 自建服务 | `https://your-server.com/hook` | 默认格式（直接兼容） |
+| Node-RED | `http://node-red:1880/endpoint` | 默认格式（直接兼容） |
 
-> **核心技巧**：这些平台不接受默认的 `{"message":"...","title":"..."}` 格式，需要通过 `data.payload` 字段覆盖整个请求体，直接发送平台要求的 JSON 结构。
+### 自定义模板（高级）
 
-### 企业微信机器人
+当预设不满足需求时，选择"自定义"预设，自行编写 JSON + Jinja2 模板。可用变量：`{{ message }}`、`{{ title }}`、`{{ data }}`。
 
-```yaml
-# 文本消息
-service: notify.hacs_webhook_notify
-data:
-  message: "这条内容不会出现在请求中"
-  data:
-    payload:
-      msgtype: text
-      text:
-        content: "警报：传感器检测到异常温度！"
-
-# Markdown 消息
-service: notify.hacs_webhook_notify
-data:
-  message: ""
-  data:
-    payload:
-      msgtype: markdown
-      markdown:
-        content: |
-          ## ⚠️ 温度告警
-          > 当前温度：**38.5°C**
-          > 阈值：36.0°C
-          > 请及时检查空调设备
+```json
+{
+  "msgtype": "markdown",
+  "markdown": {
+    "content": "## {{ title }}\n> {{ message }}\n> 时间：{{ data.time }}"
+  }
+}
 ```
 
-### 钉钉机器人
+调用时：
 
 ```yaml
-service: notify.hacs_webhook_notify
+service: notify.自定义通知服务
 data:
-  message: ""
+  title: "🌡️ 温度告警"
+  message: "当前温度超出安全阈值"
   data:
-    payload:
-      msgtype: markdown
-      markdown:
-        title: "⚠️ 告警通知"
-        text: |
-          ### 传感器触发告警
-          - 传感器：`motion_sensor_1`
-          - 状态：检测到移动
-          - 时间：{{ now().strftime('%H:%M:%S') }}
+    time: "{{ now().strftime('%H:%M:%S') }}"
 ```
-
-### Slack
-
-```yaml
-service: notify.hacs_webhook_notify
-data:
-  message: ""
-  data:
-    payload:
-      text: "传感器触发告警！"
-      blocks:
-        - type: header
-          text:
-            type: plain_text
-            text: "⚠️ 告警"
-        - type: section
-          text:
-            type: mrkdwn
-            text: |
-              *传感器:* `motion_sensor_1`
-              *状态:* 检测到移动
-              *时间:* {{ now().strftime('%Y-%m-%d %H:%M') }}
-```
-
-### Discord
-
-```yaml
-service: notify.hacs_webhook_notify
-data:
-  message: ""
-  data:
-    payload:
-      content: "<@&role_id> 传感器告警！"
-      embeds:
-        - title: "⚠️ 温度告警"
-          description: "当前温度超出安全阈值"
-          color: 16711680
-          fields:
-            - name: "传感器"
-              value: "`temp_sensor_1`"
-            - name: "当前温度"
-              value: "**38.5°C**"
-          footer:
-            text: "Home Assistant • {{ now().strftime('%Y-%m-%d %H:%M') }}"
 
 ## 许可证
 
