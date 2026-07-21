@@ -114,7 +114,7 @@ class WebhookNotifyEntity(NotifyEntity):
                         "data": data,
                     }
                 )
-                payload = json.loads(rendered)
+                payload = json.loads(str(rendered))
             except Exception as err:
                 _LOGGER.error("Payload template render failed: %s", err)
                 return

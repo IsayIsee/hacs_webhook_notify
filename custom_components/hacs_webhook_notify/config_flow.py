@@ -63,7 +63,7 @@ class WebhookNotifyConfigFlow(ConfigFlow, domain=DOMAIN):
                         rendered = tmpl.async_render(
                             {"message": "test", "title": "test", "data": {}}
                         )
-                        json.loads(rendered)
+                        json.loads(str(rendered))
                     except Exception:
                         errors[CONF_PAYLOAD_TEMPLATE] = "invalid_template"
             elif template_preset in TEMPLATE_PRESETS:
