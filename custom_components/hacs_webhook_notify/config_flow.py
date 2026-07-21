@@ -62,12 +62,17 @@ class WebhookNotifyConfigFlow(ConfigFlow, domain=DOMAIN):
                     except Exception:
                         errors[CONF_PAYLOAD_TEMPLATE] = "invalid_template"
             elif template_preset in TEMPLATE_PRESETS:
-                template_str = TEMPLATE_PRESETS[template_preset]
+                template_str = TEMPLATE_PRESETS[template_preset]["template"]
             else:
                 template_str = ""
 
             if not errors:
-                name = user_input.get(CONF_NAME, DEFAULT_NAME).strip() or DEFAULT_NAME
+                name = user_input.get(CONF_NAME, "").strip()
+                if not name or name == DEFAULT_NAME:
+                    if template_preset in TEMPLATE_PRESETS:
+                        name = TEMPLATE_PRESETS[template_preset]["name"]
+                    else:
+                        name = DEFAULT_NAME
                 return self.async_create_entry(
                     title=name,
                     data={

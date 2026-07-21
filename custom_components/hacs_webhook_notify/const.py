@@ -12,23 +12,41 @@ CONF_TEMPLATE_PRESET = "template_preset"
 DEFAULT_NAME = "webhook"
 
 TEMPLATE_PRESETS = {
-    "wecom_text": (
-        '{"msgtype":"text","text":{"content":"{{ title }}\\n{{ message }}"}}'
-    ),
-    "wecom_markdown": (
-        '{"msgtype":"markdown","markdown":{"content":"## {{ title }}\\n{{ message }}"}}'
-    ),
-    "dingtalk_text": (
-        '{"msgtype":"text","text":{"content":"{{ title }}\\n{{ message }}"}}'
-    ),
-    "dingtalk_markdown": (
-        '{"msgtype":"markdown","markdown":{"title":"{{ title }}","text":"{{ message }}"}}'
-    ),
-    "slack": (
-        '{"text":"*{{ title }}*\\n{{ message }}"}'
-    ),
-    "discord": (
-        '{"content":"**{{ title }}**\\n{{ message }}"}'
-    ),
+    "wecom_text": {
+        "name": "WeCom Text",
+        "template": (
+            '{"msgtype":"text","text":{"content":"{{ title }}\\n{{ message }}"}}'
+        ),
+    },
+    "wecom_markdown": {
+        "name": "WeCom Markdown",
+        "template": (
+            '{"msgtype":"markdown","markdown":{"content":"## {{ title }}\\n{{ message }}"}}'
+        ),
+    },
+    "dingtalk_text": {
+        "name": "DingTalk Text",
+        "template": (
+            '{"msgtype":"text","text":{"content":"{{ title }}\\n{{ message }}"}}'
+        ),
+    },
+    "dingtalk_markdown": {
+        "name": "DingTalk Markdown",
+        "template": (
+            '{"msgtype":"markdown","markdown":{"title":"{{ title }}","text":"{{ message }}"}}'
+        ),
+    },
+    "slack": {
+        "name": "Slack",
+        "template": (
+            '{"text":"*{{ title }}*\\n{{ message }}"}'
+        ),
+    },
+    "discord": {
+        "name": "Discord",
+        "template": (
+            '{"content":"**{{ title }}**\\n{{ message }}"}'
+        ),
+    },
 }
 
