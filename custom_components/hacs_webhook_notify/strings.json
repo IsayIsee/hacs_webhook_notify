@@ -6,7 +6,7 @@
         "description": "Configure a webhook URL to receive notifications via HTTP POST.",
         "data": {
           "webhook_url": "Webhook URL",
-          "name": "Service Name (optional)",
+          "name": "Service Name (ASCII only, optional — auto-set by preset)",
           "auth_token": "Auth Token (optional)",
           "headers": "Custom Headers (optional, JSON)",
           "template_preset": "Message Template Preset",
@@ -17,7 +17,8 @@
     "error": {
       "invalid_url": "URL must start with http:// or https://",
       "invalid_json": "Headers must be valid JSON",
-      "invalid_template": "Template must render to valid JSON"
+      "invalid_template": "Template must render to valid JSON",
+      "invalid_name": "Only English letters, numbers, and underscores allowed (HA slugifies Chinese to pinyin)"
     },
     "abort": {}
   }
