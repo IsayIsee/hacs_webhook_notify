@@ -17,7 +17,9 @@ from .const import (
     CONF_HEADERS,
     CONF_AUTH_TOKEN,
     CONF_PAYLOAD_TEMPLATE,
+    CONF_TEMPLATE_PRESET,
     DEFAULT_NAME,
+    TEMPLATE_PRESETS,
 )
 
 
@@ -46,17 +48,23 @@ class WebhookNotifyConfigFlow(ConfigFlow, domain=DOMAIN):
                 except json.JSONDecodeError:
                     errors[CONF_HEADERS] = "invalid_json"
 
-            # Validate payload template if provided
-            template_str = user_input.get(CONF_PAYLOAD_TEMPLATE, "").strip()
-            if template_str:
-                try:
-                    tmpl = Template(template_str, self.hass)
-                    rendered = tmpl.async_render(
-                        {"message": "test", "title": "test", "data": {}}
-                    )
-                    json.loads(rendered)
-                except Exception:
-                    errors[CONF_PAYLOAD_TEMPLATE] = "invalid_template"
+            # Resolve payload template from preset or custom input
+            template_preset = user_input.get(CONF_TEMPLATE_PRESET, "none")
+            if template_preset == "custom":
+                template_str = user_input.get(CONF_PAYLOAD_TEMPLATE, "").strip()
+                if template_str:
+                    try:
+                        tmpl = Template(template_str, self.hass)
+                        rendered = tmpl.async_render(
+                            {"message": "test", "title": "test", "data": {}}
+                        )
+                        json.loads(rendered)
+                    except Exception:
+                        errors[CONF_PAYLOAD_TEMPLATE] = "invalid_template"
+            elif template_preset in TEMPLATE_PRESETS:
+                template_str = TEMPLATE_PRESETS[template_preset]
+            else:
+                template_str = ""
 
             if not errors:
                 name = user_input.get(CONF_NAME, DEFAULT_NAME).strip() or DEFAULT_NAME
@@ -79,6 +87,18 @@ class WebhookNotifyConfigFlow(ConfigFlow, domain=DOMAIN):
                     vol.Optional(CONF_NAME, default=DEFAULT_NAME): str,
                     vol.Optional(CONF_AUTH_TOKEN, default=""): str,
                     vol.Optional(CONF_HEADERS, default=""): str,
+                    vol.Optional(CONF_TEMPLATE_PRESET, default="none"): vol.In(
+                        {
+                            "none": "默认格式 (Default)",
+                            "wecom_text": "企业微信 - 文本消息",
+                            "wecom_markdown": "企业微信 - Markdown",
+                            "dingtalk_text": "钉钉 - 文本消息",
+                            "dingtalk_markdown": "钉钉 - Markdown",
+                            "slack": "Slack",
+                            "discord": "Discord",
+                            "custom": "自定义 (Custom)",
+                        }
+                    ),
                     vol.Optional(CONF_PAYLOAD_TEMPLATE, default=""): str,
                 }
             ),

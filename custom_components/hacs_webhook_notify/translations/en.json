@@ -9,14 +9,15 @@
           "name": "Service Name (optional)",
           "auth_token": "Auth Token (optional)",
           "headers": "Custom Headers (optional, JSON)",
-          "payload_template": "Payload Template (optional, JSON with Jinja2)"
+          "template_preset": "Message Template Preset",
+          "payload_template": "Custom Template (JSON + Jinja2, only for 'Custom' preset)"
         }
       }
     },
     "error": {
       "invalid_url": "URL must start with http:// or https://",
       "invalid_json": "Headers must be valid JSON",
-      "invalid_template": "Template must be valid JSON with Jinja2 (renders to valid JSON)"
+      "invalid_template": "Template must render to valid JSON"
     },
     "abort": {}
   }
