@@ -99,7 +99,11 @@ class WebhookNotificationService(BaseNotificationService):
         elif self._payload_template is not None:
             try:
                 rendered = self._payload_template.async_render(
-                    {"message": message, "title": title, "data": data}
+                    {
+                        "message": message,
+                        "title": title.strip() if title else message,
+                        "data": data,
+                    }
                 )
                 payload = json.loads(rendered)
             except Exception as err:
