@@ -40,11 +40,6 @@ class WebhookNotifyConfigFlow(ConfigFlow, domain=DOMAIN):
             if not webhook_url.startswith(("http://", "https://")):
                 errors[CONF_WEBHOOK_URL] = "invalid_url"
 
-            # Validate service name: ASCII only (HA slugifies Chinese to pinyin)
-            name_raw = user_input.get(CONF_NAME, "").strip()
-            if name_raw and not all(ord(c) < 128 for c in name_raw):
-                errors[CONF_NAME] = "invalid_name"
-
             # Validate custom headers JSON if provided
             headers_str = user_input.get(CONF_HEADERS, "").strip()
             if headers_str:
@@ -72,10 +67,7 @@ class WebhookNotifyConfigFlow(ConfigFlow, domain=DOMAIN):
                 template_str = ""
 
             if not errors:
-                if template_preset in TEMPLATE_PRESETS:
-                    name = TEMPLATE_PRESETS[template_preset]["name"]
-                else:
-                    name = name_raw if name_raw else DEFAULT_NAME
+                name = user_input.get(CONF_NAME, "").strip() or DEFAULT_NAME
                 return self.async_create_entry(
                     title=name,
                     data={
