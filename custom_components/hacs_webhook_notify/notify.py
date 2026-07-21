@@ -110,10 +110,15 @@ class WebhookNotifyEntity(NotifyEntity):
             payload = override_payload
         elif self._payload_template is not None:
             try:
+
+                def _json_escape(s: str) -> str:
+                    """Escape newline/quote/etc for safe embedding in JSON."""
+                    return json.dumps(s)[1:-1]
+
                 rendered = self._payload_template.async_render(
                     {
-                        "message": message,
-                        "title": title,
+                        "message": _json_escape(message),
+                        "title": _json_escape(title),
                         "data": data,
                     }
                 )
