@@ -15,9 +15,15 @@ from homeassistant.components.notify import (
 )
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers.template import Template
 from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 
-from .const import CONF_WEBHOOK_URL, CONF_HEADERS, CONF_AUTH_TOKEN
+from .const import (
+    CONF_WEBHOOK_URL,
+    CONF_HEADERS,
+    CONF_AUTH_TOKEN,
+    CONF_PAYLOAD_TEMPLATE,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -41,7 +47,12 @@ class WebhookNotificationService(BaseNotificationService):
         self._hass = hass
         self._webhook_url = config.get(CONF_WEBHOOK_URL, "")
         self._auth_token = config.get(CONF_AUTH_TOKEN, "")
+        self._payload_template: Template | None = None
         self._custom_headers: dict[str, str] = {}
+
+        template_str = config.get(CONF_PAYLOAD_TEMPLATE, "")
+        if template_str:
+            self._payload_template = Template(template_str, hass)
 
         headers_str = config.get(CONF_HEADERS, "")
         if headers_str:
@@ -85,6 +96,15 @@ class WebhookNotificationService(BaseNotificationService):
 
         if override_payload is not None:
             payload = override_payload
+        elif self._payload_template is not None:
+            try:
+                rendered = self._payload_template.async_render(
+                    {"message": message, "title": title, "data": data}
+                )
+                payload = json.loads(rendered)
+            except Exception as err:
+                _LOGGER.error("Payload template render failed: %s", err)
+                return
         else:
             payload = self._build_payload(message, title, data)
 

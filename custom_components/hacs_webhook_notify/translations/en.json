@@ -8,13 +8,15 @@
           "webhook_url": "Webhook URL",
           "name": "Service Name (optional)",
           "auth_token": "Auth Token (optional)",
-          "headers": "Custom Headers (optional, JSON)"
+          "headers": "Custom Headers (optional, JSON)",
+          "payload_template": "Payload Template (optional, JSON with Jinja2)"
         }
       }
     },
     "error": {
       "invalid_url": "URL must start with http:// or https://",
-      "invalid_json": "Headers must be valid JSON"
+      "invalid_json": "Headers must be valid JSON",
+      "invalid_template": "Template must be valid JSON with Jinja2 (renders to valid JSON)"
     },
     "abort": {}
   }

@@ -8,7 +8,17 @@ import voluptuous as vol
 
 from homeassistant.config_entries import ConfigFlow
 from homeassistant.data_entry_flow import FlowResult
-from .const import DOMAIN, CONF_WEBHOOK_URL, CONF_NAME, CONF_HEADERS, CONF_AUTH_TOKEN, DEFAULT_NAME
+from homeassistant.helpers.template import Template
+
+from .const import (
+    DOMAIN,
+    CONF_WEBHOOK_URL,
+    CONF_NAME,
+    CONF_HEADERS,
+    CONF_AUTH_TOKEN,
+    CONF_PAYLOAD_TEMPLATE,
+    DEFAULT_NAME,
+)
 
 
 class WebhookNotifyConfigFlow(ConfigFlow, domain=DOMAIN):
@@ -36,6 +46,18 @@ class WebhookNotifyConfigFlow(ConfigFlow, domain=DOMAIN):
                 except json.JSONDecodeError:
                     errors[CONF_HEADERS] = "invalid_json"
 
+            # Validate payload template if provided
+            template_str = user_input.get(CONF_PAYLOAD_TEMPLATE, "").strip()
+            if template_str:
+                try:
+                    tmpl = Template(template_str, self.hass)
+                    rendered = tmpl.async_render(
+                        {"message": "test", "title": "test", "data": {}}
+                    )
+                    json.loads(rendered)
+                except Exception:
+                    errors[CONF_PAYLOAD_TEMPLATE] = "invalid_template"
+
             if not errors:
                 name = user_input.get(CONF_NAME, DEFAULT_NAME).strip() or DEFAULT_NAME
                 return self.async_create_entry(
@@ -45,6 +67,7 @@ class WebhookNotifyConfigFlow(ConfigFlow, domain=DOMAIN):
                         CONF_NAME: name,
                         CONF_AUTH_TOKEN: user_input.get(CONF_AUTH_TOKEN, "").strip(),
                         CONF_HEADERS: headers_str,
+                        CONF_PAYLOAD_TEMPLATE: template_str,
                     },
                 )
 
@@ -56,6 +79,7 @@ class WebhookNotifyConfigFlow(ConfigFlow, domain=DOMAIN):
                     vol.Optional(CONF_NAME, default=DEFAULT_NAME): str,
                     vol.Optional(CONF_AUTH_TOKEN, default=""): str,
                     vol.Optional(CONF_HEADERS, default=""): str,
+                    vol.Optional(CONF_PAYLOAD_TEMPLATE, default=""): str,
                 }
             ),
             errors=errors,

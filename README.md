@@ -185,7 +185,97 @@ HTTPServer(('0.0.0.0', 8888), H).serve_forever()
 | 自建服务 | `https://your-server.com/hook` | 直接兼容 JSON 格式 |
 | Node-RED | `http://node-red:1880/endpoint` | 直接兼容 JSON 格式 |
 
-> **注意**：企业微信/钉钉/Slack/Discord 等平台有自己特定的消息格式要求，需要在调用时通过 `data.payload` 覆盖默认的消息体格式。
+> **核心技巧**：这些平台不接受默认的 `{"message":"...","title":"..."}` 格式，需要通过 `data.payload` 字段覆盖整个请求体，直接发送平台要求的 JSON 结构。
+
+### 企业微信机器人
+
+```yaml
+# 文本消息
+service: notify.hacs_webhook_notify
+data:
+  message: "这条内容不会出现在请求中"
+  data:
+    payload:
+      msgtype: text
+      text:
+        content: "警报：传感器检测到异常温度！"
+
+# Markdown 消息
+service: notify.hacs_webhook_notify
+data:
+  message: ""
+  data:
+    payload:
+      msgtype: markdown
+      markdown:
+        content: |
+          ## ⚠️ 温度告警
+          > 当前温度：**38.5°C**
+          > 阈值：36.0°C
+          > 请及时检查空调设备
+```
+
+### 钉钉机器人
+
+```yaml
+service: notify.hacs_webhook_notify
+data:
+  message: ""
+  data:
+    payload:
+      msgtype: markdown
+      markdown:
+        title: "⚠️ 告警通知"
+        text: |
+          ### 传感器触发告警
+          - 传感器：`motion_sensor_1`
+          - 状态：检测到移动
+          - 时间：{{ now().strftime('%H:%M:%S') }}
+```
+
+### Slack
+
+```yaml
+service: notify.hacs_webhook_notify
+data:
+  message: ""
+  data:
+    payload:
+      text: "传感器触发告警！"
+      blocks:
+        - type: header
+          text:
+            type: plain_text
+            text: "⚠️ 告警"
+        - type: section
+          text:
+            type: mrkdwn
+            text: |
+              *传感器:* `motion_sensor_1`
+              *状态:* 检测到移动
+              *时间:* {{ now().strftime('%Y-%m-%d %H:%M') }}
+```
+
+### Discord
+
+```yaml
+service: notify.hacs_webhook_notify
+data:
+  message: ""
+  data:
+    payload:
+      content: "<@&role_id> 传感器告警！"
+      embeds:
+        - title: "⚠️ 温度告警"
+          description: "当前温度超出安全阈值"
+          color: 16711680
+          fields:
+            - name: "传感器"
+              value: "`temp_sensor_1`"
+            - name: "当前温度"
+              value: "**38.5°C**"
+          footer:
+            text: "Home Assistant • {{ now().strftime('%Y-%m-%d %H:%M') }}"
 
 ## 许可证
 
