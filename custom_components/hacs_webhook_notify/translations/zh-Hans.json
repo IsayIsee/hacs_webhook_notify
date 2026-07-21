@@ -1,0 +1,21 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Webhook 通知",
+        "description": "配置 Webhook URL，通过 HTTP POST 发送通知消息。",
+        "data": {
+          "webhook_url": "Webhook URL",
+          "name": "服务名称（可选）",
+          "auth_token": "认证令牌（可选）",
+          "headers": "自定义请求头（可选，JSON 格式）"
+        }
+      }
+    },
+    "error": {
+      "invalid_url": "URL 必须以 http:// 或 https:// 开头",
+      "invalid_json": "请求头必须是有效的 JSON 格式"
+    },
+    "abort": {}
+  }
+}

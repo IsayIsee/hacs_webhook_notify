@@ -1,0 +1,7 @@
+{
+  "name": "Webhook Notify",
+  "content_in_root": false,
+  "render_readme": true,
+  "domains": ["hacs_webhook_notify"],
+  "iot_class": "cloud_push"
+}
