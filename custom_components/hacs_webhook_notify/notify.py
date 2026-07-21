@@ -12,6 +12,7 @@ from homeassistant.components.notify import (
     ATTR_DATA,
     ATTR_TITLE,
     NotifyEntity,
+    NotifyEntityFeature,
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
@@ -44,6 +45,7 @@ class WebhookNotifyEntity(NotifyEntity):
     """Notification entity that sends messages via HTTP POST webhook."""
 
     _attr_has_entity_name = True
+    _attr_supported_features = NotifyEntityFeature.TITLE
 
     def __init__(self, hass: HomeAssistant, entry: ConfigEntry) -> None:
         """Initialize the entity."""
@@ -95,6 +97,7 @@ class WebhookNotifyEntity(NotifyEntity):
         # HA 2024.4+ passes title and data via kwargs, older versions via ATTR_*
         data = kwargs.get("data") or kwargs.get(ATTR_DATA) or {}
         title = kwargs.get("title") or kwargs.get(ATTR_TITLE) or ""
+        title = title.strip() or "通知"
 
         # Extract optional overrides from data
         url = data.pop("url", self._webhook_url)
@@ -110,7 +113,7 @@ class WebhookNotifyEntity(NotifyEntity):
                 rendered = self._payload_template.async_render(
                     {
                         "message": message,
-                        "title": title.strip() if title else message,
+                        "title": title,
                         "data": data,
                     }
                 )
