@@ -3,9 +3,10 @@
   "name": "Webhook Notify",
   "version": "2026.7.1",
   "config_flow": true,
-  "documentation": "https://github.com/home-assistant/core",
+  "documentation": "https://github.com/IsayIsee/hacs_webhook_notify",
+  "issue_tracker": "https://github.com/IsayIsee/hacs_webhook_notify/issues",
   "requirements": [],
   "dependencies": [],
-  "codeowners": [],
+  "codeowners": ["@IsayIsee"],
   "iot_class": "cloud_push"
 }

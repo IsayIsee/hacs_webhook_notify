@@ -2,6 +2,7 @@
 
 DOMAIN = "hacs_webhook_notify"
 
+# Config entry data keys
 CONF_WEBHOOK_URL = "webhook_url"
 CONF_NAME = "name"
 CONF_HEADERS = "headers"
@@ -11,6 +12,10 @@ CONF_TEMPLATE_PRESET = "template_preset"
 
 DEFAULT_NAME = "webhook"
 
+# Built-in message template presets for common webhook services.
+# Each preset provides a JSON template string with Jinja2 placeholders
+# ({{ message }}, {{ title }}, {{ data }}) that the component renders
+# at notification time.
 TEMPLATE_PRESETS = {
     "wecom_text": {
         "name": "WeCom Text",
@@ -49,4 +54,3 @@ TEMPLATE_PRESETS = {
         ),
     },
 }
-
