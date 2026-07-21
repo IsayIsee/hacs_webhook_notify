@@ -4,51 +4,59 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+from typing import Any
 
 import aiohttp
 
 from homeassistant.components.notify import (
     ATTR_DATA,
     ATTR_TITLE,
-    ATTR_TARGET,
-    BaseNotificationService,
+    NotifyEntity,
 )
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.template import Template
-from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 
 from .const import (
     CONF_WEBHOOK_URL,
     CONF_HEADERS,
     CONF_AUTH_TOKEN,
     CONF_PAYLOAD_TEMPLATE,
+    CONF_NAME,
+    DEFAULT_NAME,
 )
 
 _LOGGER = logging.getLogger(__name__)
 
 
-def get_service(
+async def async_setup_entry(
     hass: HomeAssistant,
-    config: ConfigType,
-    discovery_info: DiscoveryInfoType | None = None,
-) -> WebhookNotificationService | None:
-    """Get the Webhook Notify service."""
-    if discovery_info is None:
-        return None
-    return WebhookNotificationService(hass, discovery_info)
+    entry: ConfigEntry,
+    async_add_entities: AddEntitiesCallback,
+) -> None:
+    """Set up the Webhook Notify platform."""
+    async_add_entities([WebhookNotifyEntity(hass, entry)])
 
 
-class WebhookNotificationService(BaseNotificationService):
-    """Notification service that sends messages via HTTP POST webhook."""
+class WebhookNotifyEntity(NotifyEntity):
+    """Notification entity that sends messages via HTTP POST webhook."""
 
-    def __init__(self, hass: HomeAssistant, config: dict) -> None:
-        """Initialize the service."""
+    _attr_has_entity_name = True
+
+    def __init__(self, hass: HomeAssistant, entry: ConfigEntry) -> None:
+        """Initialize the entity."""
+        config = entry.data
+
         self._hass = hass
         self._webhook_url = config.get(CONF_WEBHOOK_URL, "")
         self._auth_token = config.get(CONF_AUTH_TOKEN, "")
         self._payload_template: Template | None = None
         self._custom_headers: dict[str, str] = {}
+
+        self._attr_name = config.get(CONF_NAME, DEFAULT_NAME) or DEFAULT_NAME
+        self._attr_unique_id = f"{entry.entry_id}_notify"
 
         template_str = config.get(CONF_PAYLOAD_TEMPLATE, "")
         if template_str:
@@ -74,7 +82,7 @@ class WebhookNotificationService(BaseNotificationService):
     def _build_payload(
         self, message: str, title: str | None = None, data: dict | None = None
     ) -> dict:
-        """Build the JSON payload."""
+        """Build the default JSON payload."""
         payload: dict[str, Any] = {"message": message}
         if title:
             payload["title"] = title
@@ -84,8 +92,9 @@ class WebhookNotificationService(BaseNotificationService):
 
     async def async_send_message(self, message: str, **kwargs: Any) -> None:
         """Send a message via webhook."""
-        data = kwargs.get(ATTR_DATA) or {}
-        title = kwargs.get(ATTR_TITLE, "")
+        # HA 2024.4+ passes title and data via kwargs, older versions via ATTR_*
+        data = kwargs.get("data") or kwargs.get(ATTR_DATA) or {}
+        title = kwargs.get("title") or kwargs.get(ATTR_TITLE) or ""
 
         # Extract optional overrides from data
         url = data.pop("url", self._webhook_url)
